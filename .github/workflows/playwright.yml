@@ -1,0 +1,33 @@
+name: Playwright Test
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:   # تشغيل يدوي من GitHub UI
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright script
+        run: node test_playwright.js
+
+      - name: Upload screenshot
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-screenshot
+          path: screenshot.png
