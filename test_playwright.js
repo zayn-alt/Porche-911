@@ -9,13 +9,17 @@ const { chromium } = require('playwright');
   for (let i = 1; i <= TIMES; i++) {
     console.log(`زيارة رقم ${i}...`);
     const page = await browser.newPage();
-    await page.goto(URL, { waitUntil: 'networkidle' });
-    const title = await page.title();
-    console.log(`رقم ${i} - العنوان: ${title}`);
-    await page.screenshot({ path: `screenshot_${i}.png`, fullPage: true });
+    try {
+      await page.goto(URL, { waitUntil: 'networkidle', timeout: 60000 });
+      const title = await page.title();
+      console.log(`رقم ${i} - العنوان: ${title}`);
+      await page.screenshot({ path: `screenshot_${i}.png`, fullPage: true });
+    } catch (e) {
+      console.log(`رقم ${i} - فشلت:`, e.message);
+    }
     await page.close();
   }
 
   await browser.close();
-  console.log('تم بنجاح - 10 زيارات');
+  console.log('تم بنجاح');
 })();
