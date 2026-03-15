@@ -11,6 +11,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install OpenVPN
+        run: sudo apt-get install -y openvpn
+
+      - name: Connect VPN
+        run: |
+          echo "vpnbook" > /tmp/vpn_creds.txt
+          echo "6mdaywd" >> /tmp/vpn_creds.txt
+          sudo openvpn --config vpnbook-us16-tcp443.ovpn --auth-user-pass /tmp/vpn_creds.txt --daemon
+          sleep 10
+
+      - name: Check IP
+        run: curl https://api.ipify.org
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
