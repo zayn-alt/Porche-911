@@ -2,7 +2,11 @@ const { chromium } = require('playwright');
 
 const URL = "https://gumyfui.com?directlink=1&code_type=1&sid=941721";
 const TIMES = 10;
-const PROXY = null;
+const PROXY = {
+  server: 'http://31.59.20.176:6754',
+  username: 'vokbfutp',
+  password: 'wdzsglz2uuts'
+};
 
 const stealth = () => {
   Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
