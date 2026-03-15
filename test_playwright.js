@@ -1,6 +1,8 @@
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+chromium.use(StealthPlugin());
 
-const URL = "https://gumyfui.com?directlink=1&code_type=1&sid=941721";
+const URL = "https://example.com";
 const TIMES = 10;
 
 const PROXIES = [
@@ -16,6 +18,38 @@ const PROXIES = [
   { server: 'http://64.137.96.74:6641',   username: 'vokbfutp', password: 'wdzsglz2uuts' },
 ];
 
+const REFERERS = [
+  'https://www.google.com/search?q=site',
+  'https://www.google.com/',
+  'https://www.facebook.com/',
+  'https://www.twitter.com/',
+  'https://www.youtube.com/',
+  'https://www.bing.com/search?q=site',
+  'https://www.reddit.com/',
+  'https://www.instagram.com/',
+];
+
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+];
+
+const TIMEZONES = [
+  'America/New_York',
+  'America/Chicago',
+  'America/Los_Angeles',
+  'America/Denver',
+  'Europe/London',
+  'Europe/Paris',
+];
+
+const rand     = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const randItem = (arr)      => arr[Math.floor(Math.random() * arr.length)];
+const sleep    = (ms)       => new Promise(r => setTimeout(r, ms));
+
 const stealth = () => {
   Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
   delete window.__playwright;
@@ -25,11 +59,12 @@ const stealth = () => {
     parameters.name === 'notifications'
       ? Promise.resolve({ state: Notification.permission })
       : originalQuery(parameters);
-  window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {}, app: {} };
-  Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8 });
-  Object.defineProperty(navigator, 'deviceMemory',        { get: () => 8 });
+  window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {}, app: {}, webstore: {} };
+  Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => randItem([4, 8, 12, 16]) });
+  Object.defineProperty(navigator, 'deviceMemory',        { get: () => randItem([4, 8]) });
   Object.defineProperty(navigator, 'languages',           { get: () => ['en-US', 'en'] });
   Object.defineProperty(navigator, 'platform',            { get: () => 'Win32' });
+  Object.defineProperty(navigator, 'vendor',              { get: () => 'Google Inc.' });
   Object.defineProperty(navigator, 'plugins', {
     get: () => {
       const p = [
@@ -43,11 +78,14 @@ const stealth = () => {
   });
   Object.defineProperty(window, 'outerWidth',  { get: () => 1366 });
   Object.defineProperty(window, 'outerHeight', { get: () => 768  });
+  Object.defineProperty(window, 'innerWidth',  { get: () => 1366 });
+  Object.defineProperty(window, 'innerHeight', { get: () => 768  });
   Object.defineProperty(screen,  'width',       { get: () => 1366 });
   Object.defineProperty(screen,  'height',      { get: () => 768  });
   Object.defineProperty(screen,  'availWidth',  { get: () => 1366 });
   Object.defineProperty(screen,  'availHeight', { get: () => 728  });
   Object.defineProperty(screen,  'colorDepth',  { get: () => 24   });
+  Object.defineProperty(screen,  'pixelDepth',  { get: () => 24   });
   const getParameter = WebGLRenderingContext.prototype.getParameter;
   WebGLRenderingContext.prototype.getParameter = function(parameter) {
     if (parameter === 37446) return 'Intel Inc.';
@@ -70,30 +108,34 @@ const stealth = () => {
   };
 };
 
-const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-
 const humanMouse = async (page) => {
-  for (let i = 0; i < rand(5, 10); i++) {
-    await page.mouse.move(rand(100, 1200), rand(100, 600), { steps: rand(10, 25) });
-    await page.waitForTimeout(rand(80, 250));
+  for (let i = 0; i < rand(6, 14); i++) {
+    await page.mouse.move(rand(50, 1300), rand(50, 650), { steps: rand(8, 30) });
+    await sleep(rand(50, 300));
   }
 };
 
 const humanScroll = async (page) => {
-  for (let i = 0; i < rand(4, 8); i++) {
-    await page.mouse.wheel(0, rand(150, 400));
-    await page.waitForTimeout(rand(300, 800));
+  for (let i = 0; i < rand(3, 9); i++) {
+    await page.mouse.wheel(0, rand(100, 500));
+    await sleep(rand(200, 900));
+  }
+  await sleep(rand(500, 1500));
+  for (let i = 0; i < rand(1, 3); i++) {
+    await page.mouse.wheel(0, -rand(100, 300));
+    await sleep(rand(200, 600));
   }
 };
 
 const humanClick = async (page) => {
   try {
-    const el = await page.$('a, button, p, h1, h2');
+    const el = await page.$('a, button, p, h1, h2, span');
     if (el) {
       await el.hover();
-      await page.waitForTimeout(rand(300, 700));
-      await el.click({ delay: rand(50, 150) });
+      await sleep(rand(200, 800));
+      await el.click({ delay: rand(40, 180) });
       console.log('Clicked element');
+      await sleep(rand(500, 2000));
     }
   } catch (e) {
     console.log('Click skipped');
@@ -117,19 +159,25 @@ const humanClick = async (page) => {
   });
 
   for (let i = 1; i <= TIMES; i++) {
-    const proxy = PROXIES[Math.floor(Math.random() * PROXIES.length)];
+    const proxy     = randItem(PROXIES);
+    const referer   = randItem(REFERERS);
+    const userAgent = randItem(USER_AGENTS);
+    const timezone  = randItem(TIMEZONES);
+
     console.log(`\n--- Visit ${i} of ${TIMES} ---`);
-    console.log(`Proxy: ${proxy.server}`);
+    console.log(`Proxy:    ${proxy.server}`);
+    console.log(`Referer:  ${referer}`);
+    console.log(`Timezone: ${timezone}`);
 
     const context = await browser.newContext({
       proxy,
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+      userAgent,
       viewport: { width: 1366, height: 768 },
       locale: 'en-US',
-      timezoneId: 'America/New_York',
+      timezoneId: timezone,
       javaScriptEnabled: true,
       extraHTTPHeaders: {
-        'Referer':            'https://www.google.com/',
+        'Referer':            referer,
         'Accept-Language':    'en-US,en;q=0.9',
         'Accept':             'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'sec-ch-ua':          '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
@@ -142,6 +190,10 @@ const humanClick = async (page) => {
     await page.addInitScript(stealth);
 
     try {
+      const initialDelay = rand(1000, 5000);
+      console.log(`Initial delay: ${initialDelay}ms`);
+      await sleep(initialDelay);
+
       await page.goto(URL, { waitUntil: 'networkidle', timeout: 60000 });
       console.log(`Title: ${await page.title()}`);
       console.log(`URL:   ${page.url()}`);
@@ -149,10 +201,11 @@ const humanClick = async (page) => {
       await humanMouse(page);
       await humanScroll(page);
       await humanClick(page);
+      await humanMouse(page);
 
       const wait = rand(5000, 12000);
       console.log(`Waiting ${wait}ms...`);
-      await page.waitForTimeout(wait);
+      await sleep(wait);
 
       await page.screenshot({ path: `screenshot_${i}.png` });
       console.log(`Visit ${i} done`);
@@ -162,7 +215,9 @@ const humanClick = async (page) => {
     }
 
     await context.close();
-    await new Promise(r => setTimeout(r, rand(2000, 5000)));
+    const gap = rand(3000, 8000);
+    console.log(`Gap: ${gap}ms`);
+    await sleep(gap);
   }
 
   await browser.close();
