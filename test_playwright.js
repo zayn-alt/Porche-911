@@ -2,36 +2,34 @@ const { chromium } = require('playwright');
 
 const URL = "https://gumyfui.com?directlink=1&code_type=1&sid=941721";
 const TIMES = 10;
-const PROXY = {
-  server: 'http://31.59.20.176:6754',
-  username: 'vokbfutp',
-  password: 'wdzsglz2uuts'
-};
+
+const PROXIES = [
+  { server: 'http://191.96.254.138:6185', username: 'vokbfutp', password: 'wdzsglz2uuts' },
+  { server: 'http://142.111.67.146:5611', username: 'vokbfutp', password: 'wdzsglz2uuts' },
+  { server: 'http://216.10.27.159:6837',  username: 'vokbfutp', password: 'wdzsglz2uuts' },
+  { server: 'http://31.59.20.176:6754',   username: 'vokbfutp', password: 'wdzsglz2uuts' },
+  { server: 'http://23.95.150.145:6114',  username: 'vokbfutp', password: 'wdzsglz2uuts' },
+  { server: 'http://198.23.239.134:6540', username: 'vokbfutp', password: 'wdzsglz2uuts' },
+  { server: 'http://45.38.107.97:6014',   username: 'vokbfutp', password: 'wdzsglz2uuts' },
+  { server: 'http://107.172.163.27:6543', username: 'vokbfutp', password: 'wdzsglz2uuts' },
+  { server: 'http://198.105.121.200:6462',username: 'vokbfutp', password: 'wdzsglz2uuts' },
+  { server: 'http://64.137.96.74:6641',   username: 'vokbfutp', password: 'wdzsglz2uuts' },
+];
 
 const stealth = () => {
   Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-
   delete window.__playwright;
   delete window.__pwInitScripts;
-
   const originalQuery = window.navigator.permissions.query;
   window.navigator.permissions.query = (parameters) =>
     parameters.name === 'notifications'
       ? Promise.resolve({ state: Notification.permission })
       : originalQuery(parameters);
-
-  window.chrome = {
-    runtime: {},
-    loadTimes: function() {},
-    csi: function() {},
-    app: {}
-  };
-
+  window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {}, app: {} };
   Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8 });
   Object.defineProperty(navigator, 'deviceMemory',        { get: () => 8 });
   Object.defineProperty(navigator, 'languages',           { get: () => ['en-US', 'en'] });
   Object.defineProperty(navigator, 'platform',            { get: () => 'Win32' });
-
   Object.defineProperty(navigator, 'plugins', {
     get: () => {
       const p = [
@@ -43,25 +41,19 @@ const stealth = () => {
       return p;
     }
   });
-
   Object.defineProperty(window, 'outerWidth',  { get: () => 1366 });
   Object.defineProperty(window, 'outerHeight', { get: () => 768  });
-  Object.defineProperty(window, 'innerWidth',  { get: () => 1366 });
-  Object.defineProperty(window, 'innerHeight', { get: () => 768  });
   Object.defineProperty(screen,  'width',       { get: () => 1366 });
   Object.defineProperty(screen,  'height',      { get: () => 768  });
   Object.defineProperty(screen,  'availWidth',  { get: () => 1366 });
   Object.defineProperty(screen,  'availHeight', { get: () => 728  });
   Object.defineProperty(screen,  'colorDepth',  { get: () => 24   });
-  Object.defineProperty(screen,  'pixelDepth',  { get: () => 24   });
-
   const getParameter = WebGLRenderingContext.prototype.getParameter;
   WebGLRenderingContext.prototype.getParameter = function(parameter) {
     if (parameter === 37446) return 'Intel Inc.';
     if (parameter === 37445) return 'Intel Iris OpenGL Engine';
     return getParameter.call(this, parameter);
   };
-
   const toDataURL = HTMLCanvasElement.prototype.toDataURL;
   HTMLCanvasElement.prototype.toDataURL = function(type) {
     const ctx = this.getContext('2d');
@@ -76,35 +68,6 @@ const stealth = () => {
     }
     return toDataURL.apply(this, arguments);
   };
-};
-
-const printFingerprint = async (page) => {
-  const fp = await page.evaluate(() => {
-    const gl  = document.createElement('canvas').getContext('webgl');
-    const ext = gl ? gl.getExtension('WEBGL_debug_renderer_info') : null;
-    return {
-      userAgent:           navigator.userAgent,
-      webdriver:           navigator.webdriver,
-      platform:            navigator.platform,
-      hardwareConcurrency: navigator.hardwareConcurrency,
-      deviceMemory:        navigator.deviceMemory,
-      languages:           navigator.languages,
-      pluginsCount:        navigator.plugins.length,
-      outerWidth:          window.outerWidth,
-      outerHeight:         window.outerHeight,
-      screenWidth:         screen.width,
-      screenHeight:        screen.height,
-      colorDepth:          screen.colorDepth,
-      timezone:            Intl.DateTimeFormat().resolvedOptions().timeZone,
-      webglVendor:         ext ? gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)   : 'N/A',
-      webglRenderer:       ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'N/A',
-      chromeObject:        typeof window.chrome !== 'undefined',
-    };
-  });
-
-  console.log('\n======= BROWSER FINGERPRINT =======');
-  Object.entries(fp).forEach(([k, v]) => console.log(`  ${k.padEnd(22)}: ${JSON.stringify(v)}`));
-  console.log('====================================\n');
 };
 
 const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -138,7 +101,7 @@ const humanClick = async (page) => {
 };
 
 (async () => {
-  const launchOptions = {
+  const browser = await chromium.launch({
     headless: false,
     args: [
       '--no-sandbox',
@@ -151,15 +114,15 @@ const humanClick = async (page) => {
       '--no-default-browser-check',
       '--disable-default-apps',
     ]
-  };
-  if (PROXY) launchOptions.proxy = PROXY;
-
-  const browser = await chromium.launch(launchOptions);
+  });
 
   for (let i = 1; i <= TIMES; i++) {
+    const proxy = PROXIES[Math.floor(Math.random() * PROXIES.length)];
     console.log(`\n--- Visit ${i} of ${TIMES} ---`);
+    console.log(`Proxy: ${proxy.server}`);
 
-    const contextOptions = {
+    const context = await browser.newContext({
+      proxy,
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
       viewport: { width: 1366, height: 768 },
       locale: 'en-US',
@@ -173,20 +136,15 @@ const humanClick = async (page) => {
         'sec-ch-ua-mobile':   '?0',
         'sec-ch-ua-platform': '"Windows"',
       }
-    };
-    if (PROXY) contextOptions.proxy = PROXY;
+    });
 
-    const context = await browser.newContext(contextOptions);
-    const page    = await context.newPage();
-
+    const page = await context.newPage();
     await page.addInitScript(stealth);
 
     try {
       await page.goto(URL, { waitUntil: 'networkidle', timeout: 60000 });
       console.log(`Title: ${await page.title()}`);
       console.log(`URL:   ${page.url()}`);
-
-      if (i === 1) await printFingerprint(page);
 
       await humanMouse(page);
       await humanScroll(page);
